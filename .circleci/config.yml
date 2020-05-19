@@ -8,6 +8,8 @@ workflows:
     jobs:
       - orb/lint
       - orb/pack
+      - orb/publish-dev:
+          orb-name: jorjazo/boot
       - approve-promote:
           type: approval
           requires:
