@@ -13,7 +13,8 @@ parameters:
   container-jar:
     type: string
     default: /app.jar
-    description: Absolute path to the location of the jar file inside the container.
+    description: |
+      Absolute path to the location of the jar file inside the container.
   dockerfile:
     type: string
     default: Dockerfile

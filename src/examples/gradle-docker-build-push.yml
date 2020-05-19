@@ -1,3 +1,4 @@
+---
 version: 2.1
 
 orbs:
@@ -6,9 +7,9 @@ orbs:
 workflows:
   build-docker:
     jobs:
-    - boot/build-test-jar
-    - boot/docker-build-push:
-        requires:
-        - boot/build-test-jar
-        context: ctx # DOCKER_LOGIN, DOCKER_PASSWORD
-        base-image: adoptopenjdk:14-hotspot
+      - boot/build-test-jar
+      - boot/docker-build-push:
+          requires:
+            - boot/build-test-jar
+          context: ctx    # DOCKER_LOGIN, DOCKER_PASSWORD
+          base-image: adoptopenjdk:14-hotspot

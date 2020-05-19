@@ -1,8 +1,11 @@
+---
+
 description: |
   Runs gradle with cache enabled to build, test and generate the bootJar.
-  Stores test results as artifacts and a single app.jar file (configurable) from the largest jar file
-  generated in the build/libs directory into the workspace.
-  
+  Stores test results as artifacts and a single app.jar file (configurable)
+  from the largest jar file generated in the build/libs directory into the
+  workspace.
+
 parameters:
   executor:
     type: executor
@@ -19,7 +22,8 @@ parameters:
   artifacts:
     type: string
     default: build/libs
-    description: Space-delimited list of paths relative to the working directory to store.
+    description: |
+      Space-delimited list of paths relative to the working directory to store.
   artifacts-tmp-dir:
     type: string
     default: /tmp/artifacts
@@ -27,7 +31,8 @@ parameters:
   workspace:
     type: string
     default: ""
-    description: Space-delimited list of paths relative to the working directory to store.
+    description: |
+      Space-delimited list of paths relative to the working directory to store.
   workspace-tmp-dir:
     type: string
     default: /tmp/workspace
@@ -35,47 +40,50 @@ parameters:
   app-jar:
     type: string
     default: app.jar
-    description: Special name for the largest JAR file in the build directory. Used for docker image.
+    description: |
+      Special name for the largest JAR file in the build directory.
+      Used for docker image.
 
 executor: << parameters.executor >>
 
 steps:
-- checkout
-- gradle/with_cache:
-    steps:
-    - run:
-        name: Gradle build
-        command: << parameters.gradle >> << parameters.tasks >>
-- run:
-    name: Prepare artifacts
-    command: |
-      mkdir -p << parameters.artifacts-tmp-dir >>
-      for path in << parameters.artifacts >> ; do
-        DEST=<< parameters.artifacts-tmp-dir >>/$(dirname $path)
-        echo "$path -> $DEST" 
-        mkdir -p << parameters.artifacts-tmp-dir >>/$(dirname ./$path)
-        cp -r ./$path $DEST
-      done
-- store_artifacts:
-    path: << parameters.artifacts-tmp-dir >>
-    destination: .
-- gradle/collect_test_results
-- run:
-    name: Prepare workspace
-    command: |
-      mkdir -p << parameters.workspace-tmp-dir >>
-      for path in << parameters.workspace >> ; do
-        DEST=<< parameters.workspace-tmp-dir >>/$(dirname $path)
-        echo "$path -> $DEST" 
-        mkdir -p << parameters.workspace-tmp-dir >>/$(dirname ./$path)
-        cp -r ./$path $DEST
-      done
-      
-      find build/libs -name '*jar' -printf '%s %p\n' \
-        | sort -nr | head -n1 | cut -d\  -f2 \
-        | echo $(cat) << parameters.workspace-tmp-dir >>/<< parameters.app-jar >> \
-        | xargs cp
-- persist_to_workspace:
-    root: << parameters.workspace-tmp-dir >>
-    paths:
-    - .
+  - checkout
+  - gradle/with_cache:
+      steps:
+        - run:
+            name: Gradle build
+            command: << parameters.gradle >> << parameters.tasks >>
+  - run:
+      name: Prepare artifacts
+      command: |
+        mkdir -p << parameters.artifacts-tmp-dir >>
+        for path in << parameters.artifacts >> ; do
+          DEST=<< parameters.artifacts-tmp-dir >>/$(dirname $path)
+          echo "$path -> $DEST"
+          mkdir -p << parameters.artifacts-tmp-dir >>/$(dirname ./$path)
+          cp -r ./$path $DEST
+        done
+  - store_artifacts:
+      path: << parameters.artifacts-tmp-dir >>
+      destination: .
+  - gradle/collect_test_results
+  - run:
+      name: Prepare workspace
+      command: |
+        mkdir -p << parameters.workspace-tmp-dir >>
+        for path in << parameters.workspace >> ; do
+          DEST=<< parameters.workspace-tmp-dir >>/$(dirname $path)
+          echo "$path -> $DEST"
+          mkdir -p << parameters.workspace-tmp-dir >>/$(dirname ./$path)
+          cp -r ./$path $DEST
+        done
+
+        find build/libs -name '*jar' -printf '%s %p\n' \
+          | sort -nr | head -n1 | cut -d\  -f2 \
+          | echo $(cat) \
+            << parameters.workspace-tmp-dir >>/<< parameters.app-jar >> \
+          | xargs cp
+  - persist_to_workspace:
+      root: << parameters.workspace-tmp-dir >>
+      paths:
+        - .

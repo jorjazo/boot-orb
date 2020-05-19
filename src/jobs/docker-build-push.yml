@@ -33,7 +33,8 @@ parameters:
   container-jar:
     type: string
     default: /app.jar
-    description: Absolute path to the location of the jar file inside the container.
+    description: |
+      Absolute path to the location of the jar file inside the container.
   dockerfile:
     type: string
     default: Dockerfile
@@ -75,30 +76,37 @@ steps:
         command: |
           sudo apt -y install docker-ce docker-ce-cli containerd.io
           export DOCKER_CLI_EXPERIMENTAL=enabled
-          
+
           << parameters.docker >> version
           << parameters.docker >> buildx version
-          
+
           if [ $? -ne 0 ]; then
             echo Docker buildx is not enabled.
             exit 1
           fi
 
           << parameters.docker >> pull multiarch/qemu-user-static:register
-          << parameters.docker >> run --rm --privileged multiarch/qemu-user-static:register
+          << parameters.docker >> run --rm --privileged \
+            multiarch/qemu-user-static:register
           << parameters.docker >> buildx create --use --name mybuild
-          
+
           docker_tag_args=""
           IFS="," read -ra DOCKER_TAGS \<<< "<< parameters.tags >>"
           for tag in "${DOCKER_TAGS[@]}"; do
             docker_tag_args="$docker_tag_args -t <<parameters.registry>>/<<parameters.image>>:${tag}"
           done
-          
-          echo "$<< parameters.docker-password >>" \
-            | << parameters.docker >> login -u "$<< parameters.docker-username >>" \
-                --password-stdin  << parameters.registry >>
 
-          << parameters.docker >> buildx build --push --platform << parameters.platform >>  $docker_tag_args .
+          echo "$<< parameters.docker-password >>" \
+            | << parameters.docker >> \
+              login -u "$<< parameters.docker-username >>" \
+              --password-stdin  << parameters.registry >>
+
+          << parameters.docker >> \
+            buildx build \
+            --push \
+            --platform << parameters.platform >> \
+            $docker_tag_args \
+            .
 - unless:
     condition: << parameters.buildx >>
     steps:
