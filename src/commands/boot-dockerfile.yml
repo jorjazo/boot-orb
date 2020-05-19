@@ -1,0 +1,31 @@
+description: |
+  Write a simple Dockerfile that runs an executable jar.
+
+parameters:
+  base-image:
+    type: string
+    default: openjdk:13-jdk
+    description: Image to be used in the FROM clause.
+  jar:
+    type: string
+    default: app.jar
+    description: Path to the generated boot jar file.
+  container-jar:
+    type: string
+    default: /app.jar
+    description: Absolute path to the location of the jar file inside the container.
+  dockerfile:
+    type: string
+    default: Dockerfile
+    description: Dockerfile file name.
+
+steps:
+- run:
+    name: Write default Dockerfile
+    command: |
+      echo '
+        FROM << parameters.base-image >>
+        COPY << parameters.jar >> << parameters.container-jar >>
+        ENTRYPOINT ["java","-jar","<< parameters.container-jar >>"]
+        ' > Dockerfile
+      cat Dockerfile

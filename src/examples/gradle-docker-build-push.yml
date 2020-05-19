@@ -1,0 +1,14 @@
+version: 2.1
+
+orbs:
+  boot: jorjazo/boot@1.0.0
+
+workflows:
+  build-docker:
+    jobs:
+    - boot/build-test-jar
+    - boot/docker-build-push:
+        requires:
+        - boot/build-test-jar
+        context: ctx # DOCKER_LOGIN, DOCKER_PASSWORD
+        base-image: adoptopenjdk:14-hotspot

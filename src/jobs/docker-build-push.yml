@@ -1,0 +1,115 @@
+description: |
+  Builds and pushes an image.
+  Optionally installs and uses buildx plugin for cross-arch building (slower).
+
+parameters:
+  executor:
+    type: executor
+    default: docker/machine
+  workspace:
+    type: string
+    default: /tmp/workspace
+    description: Workspace location
+  docker-username:
+    type: env_var_name
+    default: DOCKER_LOGIN
+    description: Docker username environment variable name.
+  docker-password:
+    type: env_var_name
+    default: DOCKER_PASSWORD
+    description: Docker password environment variable name.
+  registry:
+    type: string
+    default: docker.io
+    description: Docker registry name.
+  base-image:
+    type: string
+    default: openjdk:13-jdk
+    description: Image to be used in the FROM clause.
+  jar:
+    type: string
+    default: app.jar
+    description: Path to the generated boot jar file.
+  container-jar:
+    type: string
+    default: /app.jar
+    description: Absolute path to the location of the jar file inside the container.
+  dockerfile:
+    type: string
+    default: Dockerfile
+    description: Dockerfile file name.
+  tags:
+    type: string
+    default: ${CIRCLE_SHA1},${CIRCLE_BUILD_NUM},latest
+    description: Comma-delimited list of tags.
+  image:
+    type: string
+    default: ${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}
+  buildx:
+    type: boolean
+    default: false
+    description: Use builx for cross-platform building
+  platform:
+    type: string
+    default: linux/amd64,linux/arm64
+    description: Target platform.
+  docker:
+    type: string
+    default: docker
+    description: Docker command.
+executor: << parameters.executor >>
+working_directory: << parameters.workspace >>
+steps:
+- attach_workspace:
+    at: << parameters.workspace >>
+- boot-dockerfile:
+    base-image: << parameters.base-image >>
+    jar: << parameters.jar >>
+    container-jar: << parameters.container-jar >>
+    dockerfile: << parameters.dockerfile >>
+- when:
+    condition: << parameters.buildx >>
+    steps:
+    - run:
+        name: Build image with buildx
+        command: |
+          sudo apt -y install docker-ce docker-ce-cli containerd.io
+          export DOCKER_CLI_EXPERIMENTAL=enabled
+          
+          << parameters.docker >> version
+          << parameters.docker >> buildx version
+          
+          if [ $? -ne 0 ]; then
+            echo Docker buildx is not enabled.
+            exit 1
+          fi
+
+          << parameters.docker >> pull multiarch/qemu-user-static:register
+          << parameters.docker >> run --rm --privileged multiarch/qemu-user-static:register
+          << parameters.docker >> buildx create --use --name mybuild
+          
+          docker_tag_args=""
+          IFS="," read -ra DOCKER_TAGS \<<< "<< parameters.tags >>"
+          for tag in "${DOCKER_TAGS[@]}"; do
+            docker_tag_args="$docker_tag_args -t <<parameters.registry>>/<<parameters.image>>:${tag}"
+          done
+          
+          echo "$<< parameters.docker-password >>" \
+            | << parameters.docker >> login -u "$<< parameters.docker-username >>" \
+                --password-stdin  << parameters.registry >>
+
+          << parameters.docker >> buildx build --push --platform << parameters.platform >>  $docker_tag_args .
+- unless:
+    condition: << parameters.buildx >>
+    steps:
+    - docker/check:
+        docker-username: << parameters.docker-username >>
+        docker-password: << parameters.docker-password >>
+        registry: << parameters.registry >>
+    - docker/build:
+        path: << parameters.workspace >>
+        image: << parameters.image >>
+        tag: << parameters.tags >>
+    - docker/push:
+        image: << parameters.image >>
+        tag: << parameters.tags >>

@@ -1,0 +1,13 @@
+version: 2.1
+
+description: >
+  Easily build, test, and build bootJar for a gradle / Spring Boot application.
+  Containerize it without the needing of a Dockerfile.
+
+display:
+  source_url: https://github.com/jorjazo/boot-orb
+  home_url: https://jorjazo.dev/
+
+orbs:
+  gradle: circleci/gradle@2.0.1
+  docker: circleci/docker@1.0.1
