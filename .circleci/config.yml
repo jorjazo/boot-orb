@@ -16,7 +16,7 @@ workflows:
       - approve-promote:
           type: approval
           requires:
-            - orb/publish-dev
+            - orb/publish
       - orb/dev-promote-prod-from-commit-subject:
          orb-name: jorjazo/boot
          context: personal
