@@ -2,7 +2,7 @@ version: 2.1
 
 orbs:
   orb: circleci/orb-tools@9.1
-  
+
 workflows:
   lint-pack-validate-publish-dev:
     jobs:
@@ -18,15 +18,14 @@ workflows:
           requires:
             - orb/publish
       - orb/dev-promote-prod-from-commit-subject:
-         orb-name: jorjazo/boot
-         context: personal
-         add-pr-comment: false
-         fail-if-semver-not-indicated: true
-         publish-version-tag: true
-         ssh-fingerprints: c4:77:00:9d:42:ef:be:8c:c2:77:8f:91:b3:3d:3e:b2
-         requires:
-           - approve-promote
-         filters:
-           branches:
-             only: master
-              
+          orb-name: jorjazo/boot
+          context: personal
+          add-pr-comment: false
+          fail-if-semver-not-indicated: true
+          publish-version-tag: true
+          ssh-fingerprints: c4:77:00:9d:42:ef:be:8c:c2:77:8f:91:b3:3d:3e:b2
+          requires:
+            - approve-promote
+          filters:
+            branches:
+              only: master
