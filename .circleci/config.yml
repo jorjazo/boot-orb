@@ -10,11 +10,13 @@ workflows:
       - orb/pack
       - orb/publish-dev:
           orb-name: jorjazo/boot
-      - approve-promote:
-          type: approval
           requires:
             - orb/pack
             - orb/lint
+      - approve-promote:
+          type: approval
+          requires:
+            - orb/publish-dev
       - orb/dev-promote-prod-from-commit-subject:
           orb-name: jorjazo/boot
           context: personal
