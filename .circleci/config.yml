@@ -8,15 +8,11 @@ workflows:
     jobs:
       - orb/lint
       - orb/pack
-      - orb/publish:
-          orb-ref: jorjazo/boot
-          requires:
-            - orb/lint
-            - orb/pack
       - approve-promote:
           type: approval
           requires:
-            - orb/publish
+            - orb/pack
+            - orb/lint
       - orb/dev-promote-prod-from-commit-subject:
           orb-name: jorjazo/boot
           context: personal
